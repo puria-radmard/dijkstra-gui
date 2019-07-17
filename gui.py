@@ -2,6 +2,30 @@ from algorithm import Graph, Node
 from tkinter import *
 import numpy as np
 
+class repEdges:
+
+    def __init__(self, node1, node2, weight, can):
+        self.node1  = node1
+        self.node2  = node2
+        self.weight = weight
+
+        x1, y1 = node1.x, node1.y
+        x2, y2 = node2.x, node2.y
+        self.avi    = can.create_line( x1,y1, x2,y2, fill="blue", width = 1.5)
+    
+        self.xa = 0.5*(x1 + x2)
+        self.ya = 0.5*(y1 + y2)
+
+        self.text   = can.create_text(self.xa , self.ya, text=self.weight, fill = "blue")
+
+    def draw(self, can, App):
+        App.edges.append(self)
+        return(self.avi, self.avi)
+    
+    def delete(self, can, App):
+        can.delete(self.avi)
+        can.delete(self.text)
+        App.edges.remove(self)
 
 
 class DijkApp:
@@ -154,14 +178,32 @@ class DijkApp:
 
             self.graph.form_connection(self.don, self.sel, con_weight)
 
-            ##########
+            globals()["edge{}".format(self.counter)] = repEdges( self.don, self.sel, con_weight, self.canvas )
+            globals()["edge{}".format(self.counter)].draw(self.canvas, self)
+            self.counter += 1
 
             self.don = None
             self.sel = None
-            self.upwidge = []
+            self.clear_widge()
         
         elif self.action == 4:
-            pass
+
+            x = event.x
+            y = event.y
+
+            for edge in self.edges:
+
+                if (abs(x - edge.xa) <= 10) and (abs(y - edge.ya) <= 10):
+                    
+                    self.graph.delete_connection(edge.node1, edge.node2)
+                    edge.delete(self.canvas, self)
+                            
+                    break
+            
+            print(self.graph.nodes[0].connections)
+
+            self.clear_widge()
+            self.action = 0
 
     def build(self):
         self.drnb.grid(row = 2, column = 1)
