@@ -17,10 +17,21 @@ class repEdges:
         self.ya = 0.5*(y1 + y2)
 
         self.text   = can.create_text(self.xa , self.ya, text=self.weight, fill = "blue")
+        self.can    = can
 
-    def draw(self, can, App):
+    def draw(self, App):
         App.edges.append(self)
-        return(self.avi, self.avi)
+        return(self.avi, self.text)
+    
+    def highdraw(self):
+        self.can.itemconfig(self.text, fill = "green")
+        self.can.itemconfig(self.avi , fill = "green")
+        #return(self.avi, self.text)
+    
+    def unhighdraw(self):
+        self.can.itemconfig(self.text, fill = "blue")
+        self.can.itemconfig(self.avi , fill = "blue")
+        #return(self.avi, self.text)
     
     def delete(self, can, App):
         can.delete(self.avi)
@@ -37,6 +48,7 @@ class DijkApp:
         self.dene   = Button(window, text = "Delete Edge", command = self.delete_edge)
         self.canbut = Button(window, text = "Cancel", command = self.cancel_command)
         self.delall = Button(window, text = "Delete All", command = self.delete_all)
+        self.perf   = Button(window, text = "Find Paths", command = self.find_paths)
         self.canvas = Canvas(window, width = 600, height = 500, bg = "black")
         self.action = 0
         self.graph  = Graph("MyGraph", [])
@@ -46,13 +58,41 @@ class DijkApp:
         self.sel     = None
         self.don     = None
         self.upwidge = []
+    
+
+    def highlight_path(self):
+        t = self.t - 1
+
+        for edge in self.edges:
+            edge.unhighdraw()
+
+        for i in range(len(self.paths[t]) - 1):
+            for edge in self.edges:
+                if (edge.node1 == self.paths[t][i]) and (edge.node2 == self.paths[t][i+1]):
+                    edge.highdraw()
+                    break
+                elif (edge.node2 == self.paths[t][i]) and (edge.node1 == self.paths[t][i+1]):
+                    edge.highdraw()
+                    break
+
+    
+    def cycle_paths(self):
+        num = len(self.paths)
+        self.t = (self.t % num) + 1
+        self.highlight_path()
 
     def clear_widge(self):
         for item in self.upwidge:
             item.grid_forget()
+
         self.upwidge = []
 
+        for edge in self.edges:
+            edge.unhighdraw()
+
     def user_action(self, event):
+
+        self.clear_widge()
         
         if self.action == 0:
             pass
@@ -179,7 +219,7 @@ class DijkApp:
             self.graph.form_connection(self.don, self.sel, con_weight)
 
             globals()["edge{}".format(self.counter)] = repEdges( self.don, self.sel, con_weight, self.canvas )
-            globals()["edge{}".format(self.counter)].draw(self.canvas, self)
+            globals()["edge{}".format(self.counter)].draw(self)
             self.counter += 1
 
             self.don = None
@@ -199,11 +239,80 @@ class DijkApp:
                     edge.delete(self.canvas, self)
                             
                     break
-            
-            print(self.graph.nodes[0].connections)
 
             self.clear_widge()
             self.action = 0
+        
+        elif self.action == 5:
+
+            x = event.x
+            y = event.y
+
+            cancel_ = True
+            for node in self.graph.nodes:
+                if (abs(x - node.x) <= 10) and (abs(y - node.y) <= 10):                    
+                    self.sel = node
+                    cancel_ = False                   
+                    break
+
+            if cancel_:
+                self.action = 0
+                self.clear_widge()
+
+            else:
+                self.action = 5.5
+                notice_label_2 = Label(self.window, font = ("Helvetica", 12), text = "Select second node:", fg = "green", bg = "black")          
+                notice_label_2.grid(row = 3, column = 5)
+                self.upwidge.append(notice_label_2)
+
+        elif self.action == 5.5:
+
+            x = event.x
+            y = event.y 
+
+            cancel_ = True
+            for node in self.graph.nodes:
+                if (abs(x - node.x) <= 10) and (abs(y - node.y) <= 10):                    
+                    self.don = node
+                    cancel_ = False                   
+                    break
+
+            if cancel_:
+                self.action = 0
+                self.clear_widge()
+                return (None)
+            else:
+                self.action = 3.5
+                notice_label_2 = Label(self.window, font = ("Helvetica", 12), text = "Select second node:", fg = "blue", bg = "black")          
+                notice_label_2.grid(row = 3, column = 5)
+                self.upwidge.append(notice_label_2)
+            
+            self.clear_widge()
+        
+            leng = self.graph.dijkstras(self.sel, self.don)[0]
+
+            if leng == None:
+                leng_lab = Label(self.window, font = ("Helvetica", 15), text = "No paths found!", fg = "green", bg = "black")
+                leng_lab.grid(row = 3, column = 5)
+                self.upwidge.append(leng_lab)
+                return (None)
+
+            leng_lab = Label(self.window, font = ("Helvetica", 15), text = "Path length = {}".format(leng), fg = "green", bg = "black")
+            leng_lab.grid(row = 3, column = 5)
+            self.upwidge.append(leng_lab)
+
+            self.paths = self.graph.dijkstras(self.sel, self.don)[1]
+            print(self.paths)
+            self.t = 0
+
+            self.highlight_path()
+            
+            next_path_button =  Button(self.window, text = "Next Path", command = self.cycle_paths)
+            next_path_button.grid(row = 8, column = 5)
+            self.upwidge.append(next_path_button)
+
+        #############
+
 
     def build(self):
         self.drnb.grid(row = 2, column = 1)
@@ -213,12 +322,15 @@ class DijkApp:
 
         self.canbut.grid(row = 2, column = 8)
         self.delall.grid(row = 3, column = 8)
+        self.perf.grid(row = 4, column = 8, rowspan = 2)
 
         self.drnb.config(width = 10)
         self.denb.config(width = 10)
         self.drne.config(width = 10)
         self.dene.config(width = 10)
 
+        self.perf.config(width = 10)
+        self.perf.config(height = 2)
         self.canbut.config(width = 10)
         self.delall.config(width = 10)
         
@@ -227,12 +339,15 @@ class DijkApp:
         self.canvas.grid(row = 6, column = 5)
 
     def draw_node(self):
+        self.clear_widge()
         self.action = 1
     
     def delete_node(self):
+        self.clear_widge()
         self.action = 2
     
     def draw_edge(self):
+        self.clear_widge()
         self.action = 3
 
         notice_label = Label(self.window,font = ("Helvetica", 15), text = "Select first node:", fg = "blue", bg = "black")          
@@ -240,16 +355,22 @@ class DijkApp:
         self.upwidge.append(notice_label)
 
     def delete_edge(self):
+        self.clear_widge()
         self.action = 4
+    
+    def find_paths(self):
+        self.clear_widge()
+        self.action = 5
+
+        notice_label = Label(self.window,font = ("Helvetica", 15), text = "Select first node:", fg = "green", bg = "black")          
+        notice_label.grid(row = 3, column = 5)
+        self.upwidge.append(notice_label)
     
     def cancel_command(self):
         self.sel = None
         self.don = None
-        
-        for widget in self.upwidge:
-            widget.grid_forget()
-
         self.action = 0
+        self.clear_widge()
     
     def delete_all(self):
         print(self.graph)

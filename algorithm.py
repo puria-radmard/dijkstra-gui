@@ -85,6 +85,13 @@ class Graph:
         paths = [[start]]
         next_nodes = []
         paths_temp = []
+
+        _cancel = True
+        for connection in end.connections:
+            if end.connections[connection][1]:
+                _cancel = False
+        if _cancel == True:
+            return (None)
         
         while True: 
             
@@ -147,8 +154,12 @@ class Graph:
         
         path_length = end.tent
         pathsu = self.list_paths(start, end)
+
+        if pathsu == None:
+            return (None, None)
+
         pathss = sorted(pathsu, key = lambda path: len(path))
-        
+
         return (path_length, pathss)
         
     
