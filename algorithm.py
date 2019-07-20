@@ -47,7 +47,7 @@ class Graph:
         self.nodes.remove(node)
 
     def form_connection(self, node1, node2, weight):
-        node1.connections[node2] = [weight, False]        
+        node1.connections[node2] = [weight, False]  
         node2.connections[node1] = [weight, False]
     
     def delete_connection(self, node1, node2):
@@ -57,14 +57,18 @@ class Graph:
         else:
             pass
         
-    def purge_connections(self, node):
+    def purge_node_connections(self, node):
         for connection in node.connections:
             node.connections[connection][1] = False
             connection.connections[node][1] = False
     
     def purge_all_connections(self):
         for node in self.nodes:
-            self.purge_connections(node)
+            self.purge_node_connections(node)
+    
+    def purge_all_nodes(self):
+        for node in self.nodes:
+            node.tent = False
                  
     def multi_split_path(self, path, splits):
         outpaths = []
@@ -154,6 +158,9 @@ class Graph:
         
         path_length = end.tent
         pathsu = self.list_paths(start, end)
+
+        self.purge_all_connections()
+        self.purge_all_nodes()
 
         if pathsu == None:
             return (None, None)

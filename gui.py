@@ -222,6 +222,9 @@ class DijkApp:
             globals()["edge{}".format(self.counter)].draw(self)
             self.counter += 1
 
+            
+            self.action = 0
+
             self.don = None
             self.sel = None
             self.clear_widge()
@@ -283,7 +286,7 @@ class DijkApp:
                 return (None)
             else:
                 self.action = 3.5
-                notice_label_2 = Label(self.window, font = ("Helvetica", 12), text = "Select second node:", fg = "blue", bg = "black")          
+                notice_label_2 = Label(self.window, font = ("Helvetica", 12), text = "Select second node:", fg = "light blue", bg = "black")          
                 notice_label_2.grid(row = 3, column = 5)
                 self.upwidge.append(notice_label_2)
             
